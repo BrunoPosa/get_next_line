@@ -6,7 +6,7 @@
 /*   By: bposa <bposa@student.hive.fi>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/29 20:49:44 by bposa             #+#    #+#             */
-/*   Updated: 2024/03/05 18:58:45 by bposa            ###   ########.fr       */
+/*   Updated: 2024/03/06 12:15:19 by bposa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ size_t	newlinech_finder(char *s, size_t n)
 		return (0);
 	while (n > 0)
 	{
-		if (*s == '\n')
+		if (s[i] == '\n')
 			return (i);
 		i++;
 		n--;
@@ -55,21 +55,25 @@ size_t	ft_strlen(const char *s)
 	return (i);
 }
 
-size_t	ft_strlcpy(char *dst, const char *src, size_t size)
+void	*my_memcpy(void *dst, const void *src, size_t n)
 {
-	size_t	i;
+	size_t			i;
+	unsigned char	*d;
+	unsigned char	*s;
 
+	d = (unsigned char *)dst;
+	s = (unsigned char *)src;
 	i = 0;
-	if (size == 0)
-		return (ft_strlen(src));
-	while (i + 1 < size && src[i] != '\0')
+	if (src == 0 && dst == 0)
+		return (NULL);
+	while (i +1< n)
 	{
-		dst[i] = src[i];
+		d[i] = s[i];
 		i++;
 	}
-	if (size != 0)
-		dst[i] = '\0';
-	return (ft_strlen(src));
+    if (n != 0)
+        d[i] = '\0';
+	return (d);
 }
 
 char	*ft_strjoin(char *s1, char const *s2)
@@ -78,20 +82,23 @@ char	*ft_strjoin(char *s1, char const *s2)
 	size_t	s1_len;
 	size_t	s2_len;
 
-	if (!s1 || !s2)
+	if (!s2)
 	{
 		return (NULL);
 	}
-	s1_len = ft_strlen(s1);
+	if (s1)
+		s1_len = ft_strlen(s1);
+	else
+		s1_len = 0;
 	s2_len = ft_strlen(s2);
 	joined = malloc(sizeof(char) * (s1_len + s2_len + 1));
 	if (!joined)
 	{
 		return (NULL);
 	}
-	ft_strlcpy(joined, s1, s1_len + 1);
-	ft_strlcpy(joined + s1_len, s2, s2_len + 1);
-	free((char*)s1); //do i need to cast? what happens as this starts bzeroed?
+	my_memcpy(joined, s1, s1_len + 1);// +1 or not?
+	my_memcpy(joined + s1_len, s2, s2_len + 1);
+	// free((char*)s1); //do i need to cast? what happens as this starts bzeroed?
 	return (joined);
 }
 
@@ -180,7 +187,7 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 	str = malloc(malloc_len);
 	if (!str)
 		return (NULL);
-	ft_strlcpy(str, &s[start], malloc_len);
+	my_memcpy(str, &s[start], malloc_len);
 	return (str);
 }
 
@@ -200,30 +207,36 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 char	*get_next_line(int fd)
 {
 	static char	buffer[BUFFER_SIZE + 1];
-	char		*gotten_next_line;
-	size_t		indexof_nlchar;
+	char		*rvalue;
+	size_t		nl_index;
+	size_t		leftover;
 	int			err;
 
 	err = 1;
-	indexof_nlchar = 0;
-	gotten_next_line = NULL;
-	while (err != 0  && indexof_nlchar == 0)
+	nl_index = 0;
+	leftover = 0;
+	rvalue = NULL;
+	while (err != 0  && nl_index == 0)
 	{
 		err = read(fd, buffer, BUFFER_SIZE);
+		buffer[BUFFER_SIZE] = 0; //should this be here?
 		if (err == -1)
 		{
-			// free_f(gotten_next_line);
+			// free_f(rvalue);
 			return (NULL);
 		}
-		indexof_nlchar = newlinech_finder(buffer, BUFFER_SIZE);
-		if (indexof_nlchar != 0 || err == 0)
+		nl_index = newlinech_finder(buffer, BUFFER_SIZE);
+		if (nl_index != 0 || err == 0)
 		{
-printf("reached here, %ld\n", &buffer[indexof_nlchar] - buffer);
-			ft_strjoin(gotten_next_line, ft_substr(buffer, 0, &buffer[indexof_nlchar] - buffer));  // pointer arrythmatic can't be used here like so
-			ft_memmove(buffer, &buffer[indexof_nlchar], ft_strlen(&buffer[indexof_nlchar]));
+	printf("\nbuf b4:{%s}\n", buffer);
+			leftover = ft_strlen(&buffer[nl_index +1]);
+			rvalue = ft_strjoin(rvalue, ft_substr(buffer, 0, &buffer[nl_index] - buffer));
+			ft_memmove(buffer, &buffer[nl_index +1], leftover);
+			bzero(&buffer[leftover], BUFFER_SIZE - leftover);
+	printf("\nbuf after memmove:{%s}\n", buffer);
 		}
 		else
-			ft_strjoin(gotten_next_line, buffer);
+			rvalue = ft_strjoin(rvalue, buffer);
 	}
-	return(gotten_next_line);
+	return(rvalue);
 }
