@@ -5,11 +5,14 @@
 int	main(void)
 {
 	int	fd;
+	int	i = 0;
 
 	fd = open("test.txt", O_RDONLY);
-	printf("result from fd %d:|%s|\n", fd, get_next_line(fd));
-	printf("result from fd %d:\n|%s|\n", fd, get_next_line(fd));
-	printf("result from fd %d:\n|%s|\n", fd, get_next_line(fd));
-	printf("result from fd %d:\n|%s|\n", fd, get_next_line(fd));
+	while (i < 2)
+	{
+		printf("result from fd %d:\n|%s|\n___________", fd, get_next_line(fd));
+		i++;
+	}
+	close(fd);
 	return 0;
 }
