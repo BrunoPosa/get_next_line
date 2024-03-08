@@ -8,7 +8,7 @@ int	main(void)
 	int	i = 0;
 
 	fd = open("test.txt", O_RDONLY);
-	while (i < 2)
+	while (i < 6)
 	{
 		printf("result from fd %d:\n|%s|\n___________", fd, get_next_line(fd));
 		i++;

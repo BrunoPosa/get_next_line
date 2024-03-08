@@ -6,7 +6,7 @@
 /*   By: bposa <bposa@student.hive.fi>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/29 20:49:44 by bposa             #+#    #+#             */
-/*   Updated: 2024/03/07 16:16:39 by bposa            ###   ########.fr       */
+/*   Updated: 2024/03/08 15:15:49 by bposa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -195,7 +195,7 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 */
 
 
-int	buffer_handler(char *buffer, char *rvalue, int *error)
+int	buffer_handler(char *buffer, char **rvalue, int *error)
 {
 	size_t	indexof_first_newline;
 	size_t	leftoverlen;
@@ -210,16 +210,17 @@ int	buffer_handler(char *buffer, char *rvalue, int *error)
 	{
 		leftoverlen = ft_strlen(&buffer[indexof_first_newline + 1]);
 		temp = ft_substr(buffer, 0, &buffer[indexof_first_newline] - buffer);
-		rvalue = ft_strjoin(rvalue, temp);
+		*rvalue = ft_strjoin(*rvalue, temp);
 		ft_memmove(buffer, &buffer[indexof_first_newline +1], leftoverlen);
 		bzero(&buffer[leftoverlen], BUFFER_SIZE - leftoverlen);
+	printf("rvalue in bufhandl:%s\n", *rvalue); //REMOVE
 		//Chek malloc +ret if err + free temp etc. use calloc in place of malloc(if allowed)
 		*error = 42;
 		return (1);
 	}
 	else
 	{
-		rvalue = ft_strjoin(rvalue, buffer);
+		*rvalue = ft_strjoin(*rvalue, buffer);
 	}
 	return (0);
 }
@@ -241,18 +242,18 @@ char	*get_next_line(int fd)
 	is_there_newline = 0;
 	while (err != 0 && err != -1 && fd >= 0)
 	{
-		is_there_newline = buffer_handler(buffer, rvalue, &err);
+		is_there_newline = buffer_handler(buffer, &rvalue, &err);
 		if (err != -1 && is_there_newline == 1)
 			return (rvalue);
 		else if (err != -1)
 			err = read(fd, buffer, BUFFER_SIZE);
 		else
-			{
-				printf("\nWHAAT?!\n");
-				break ;
-			}
+			printf("\nWHAAT?!\n"); // break;
 	}
-	if (err == -1 || err == 0 || fd < 0)
-		return (NULL);
+	if (err == -1 || (err == 0 && !*rvalue) || fd < 0)
+		{
+		printf("\n and rvalue at end:%s\n", rvalue); //REMOVE
+			return (NULL);
+		}
 	return (rvalue);
 }
