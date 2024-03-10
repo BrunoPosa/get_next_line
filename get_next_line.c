@@ -1,49 +1,9 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   get_next_line.c                                    :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: bposa <bposa@student.hive.fi>              +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/02/29 20:49:44 by bposa             #+#    #+#             */
-/*   Updated: 2024/03/08 15:15:49 by bposa            ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "get_next_line.h"
-#include <string.h>
 #include <stdio.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
-size_t	newlinech_finder(char *s, size_t n)
-{
-	size_t	i;
-
-	i = 0;
-	if (!s || n == 0)
-		return (0);
-	while (n > 0)
-	{
-		if (s[i] == '\n')
-			return (i);
-		i++;
-		n--;
-	}
-	return (0);
-}
-
-// void	ft_bzero(void *s, size_t n)
-// {
-// 	unsigned char	*str;
-// 	size_t			i;
-
-// 	str = (unsigned char *)s;
-// 	i = 0;
-// 	while (i < n)
-// 	{
-// 		str[i] = 0;
-// 		i++;
-// 	}
-// }
 
 size_t	ft_strlen(const char *s)
 {
@@ -66,7 +26,7 @@ void	*my_memcpy(void *dst, const void *src, size_t n)
 	i = 0;
 	if (src == 0 && dst == 0)
 		return (NULL);
-	while (i +1< n)
+	while (i +1< n) //??
 	{
 		d[i] = s[i];
 		i++;
@@ -75,40 +35,6 @@ void	*my_memcpy(void *dst, const void *src, size_t n)
         d[i] = '\0';
 	return (d);
 }
-
-char	*ft_strjoin(char *rvalue1, char *buffer1)
-{
-	char	*joined;
-	size_t	rvalue1_len;
-	size_t	buffer1_len;
-
-	rvalue1_len = 0;
-	buffer1_len = ft_strlen(buffer1);
-	if (rvalue1)
-		rvalue1_len = ft_strlen(rvalue1);
-	else
-		rvalue1_len = 0;
-	joined = malloc(sizeof(char) * (rvalue1_len + buffer1_len + 1));
-	if (!joined)
-		return (NULL);
-	my_memcpy(joined, rvalue1, rvalue1_len + 1);// +1 or not?
-	my_memcpy(joined + rvalue1_len, buffer1, buffer1_len + 1);
-	// free((char*)s1); //do i need to cast?
-	return (joined);
-}
-
-// void	*ft_calloc(size_t count, size_t size)
-// {
-// 	void	*p;
-// 	size_t	total_size;
-
-// 	total_size = count * size;
-// 	p = malloc(total_size);
-// 	if (p == NULL)
-// 		return (NULL);
-// 	ft_bzero(p, total_size);
-// 	return (p);
-// }
 
 void	*ft_memmove(void *dst, void *src, size_t len)
 {
@@ -138,122 +64,115 @@ void	*ft_memmove(void *dst, void *src, size_t len)
 	return (dst);
 }
 
-char	*ft_strdup(char *s1)
+void	my_bzero(char *s, size_t n)
 {
-	char	*dup;
 	size_t	i;
 
 	i = 0;
-	dup = malloc (ft_strlen(s1) + 1);
-	if (!dup)
-		return (NULL);
-	while (s1[i] != '\0')
+	while (i < n)
 	{
-		dup[i] = s1[i];
+		s[i] = 0;
 		i++;
 	}
-	dup[i] = '\0';
-	s1 = NULL;
-	return (dup);
 }
 
-char	*ft_substr(char const *s, unsigned int start, size_t len)
+/*  newlinech_finder
+	- check for \n char function
+	- return size_t index of the \n if found, OR 0 if not found
+*/
+ssize_t	newlinech_finder(char *s)
 {
-	char	*str;
-	size_t	i;
-	size_t	malloc_len;
+	ssize_t	i;
 
 	i = 0;
-	malloc_len = 0;
 	if (!s)
-		return (NULL);
-	if (start > ft_strlen(s) || len == 0 || s[0] == '\0')
+		return (-1);
+	while (s && s[i] != '\0')
 	{
-		return (ft_strdup(""));
+		if (s[i] == '\n')
+			return (i);
+		i++;
 	}
-	if (len < ft_strlen(&s[start]))
-	{
-		malloc_len = len + 1;
-	}
-	else
-	{
-		malloc_len = ft_strlen(&s[start]) + 1;
-	}
-	str = malloc(malloc_len);
-	if (!str)
-		return (NULL);
-	my_memcpy(str, &s[start], malloc_len);
-	return (str);
+	return (-1); // could returning -i be useful to see when bytesread is < BUFFER_SIZE? beware discerning betw -0 and 0
 }
 
-/* GNL
-	first check if anything is in buf and if yes, check if \n is there, and if yes, strjoin
-	it to rvalue, and memmove the rest to start of buf. Then UNTIL \n or EOF is found in
-	the buffer (if found, check that there is * management * for another \n in it as well as for 
-	content after)- keep reading the file BUFFER_SIZE at a time, strjoining the chunks to rvalue.
-	again, if \n found then strjoin part of buffer, memmove the rest and zero out till end. +Errors.
-*/
-
-
-int	buffer_handler(char *buffer, char **rvalue, int *error)
+char	*ft_strjoin(char *rvalue1, char *buffer1, size_t buffer_len)
 {
-	size_t	indexof_first_newline;
-	size_t	leftoverlen;
-	char	*temp;
+	char	*joined;
+	size_t	rvalue1_len;
 
-	indexof_first_newline = 0;
-	leftoverlen = 0;
-	temp = NULL;
-	if (*buffer)
-		indexof_first_newline = newlinech_finder(buffer, BUFFER_SIZE);
-	if (indexof_first_newline != 0)
-	{
-		leftoverlen = ft_strlen(&buffer[indexof_first_newline + 1]);
-		temp = ft_substr(buffer, 0, &buffer[indexof_first_newline] - buffer);
-		*rvalue = ft_strjoin(*rvalue, temp);
-		ft_memmove(buffer, &buffer[indexof_first_newline +1], leftoverlen);
-		bzero(&buffer[leftoverlen], BUFFER_SIZE - leftoverlen);
-	printf("rvalue in bufhandl:%s\n", *rvalue); //REMOVE
-		//Chek malloc +ret if err + free temp etc. use calloc in place of malloc(if allowed)
-		*error = 42;
-		return (1);
-	}
+	if (rvalue1)
+		rvalue1_len = ft_strlen(rvalue1);
 	else
+		rvalue1_len = 0;
+	joined = malloc(sizeof(char) * (rvalue1_len + buffer_len + 1));
+	if (!joined)
+		return (NULL);
+	my_memcpy(joined, rvalue1, rvalue1_len + 1);// +1 or not?
+	my_memcpy(joined + rvalue1_len, buffer1, buffer_len + 1);
+	// free((char*)s1); //do i need to cast?
+	return (joined);
+}
+
+/*	- buffer_handler should sort through up to (bytesread/until \0) of it and if needed, store it in rvalue
+		and shift its content by index_of_newline or if no \n, shift all until \0. bzero the rest until BUF_SIZE
+	- call check for \n char function
+	- if bytesread == 0 && *rvalue != \0 //if not at start of function and bytesread is 0
+	- returns flag 1 if found \n 	*/
+int	buffer_handler(char *buffer, ssize_t bytesread, char **rvalue, int *error)
+{
+	ssize_t	index_of_nl; // do i need to initialize?
+
+	if (*buffer != 0) //correct syntax for array?
 	{
-		*rvalue = ft_strjoin(*rvalue, buffer);
+		index_of_nl = newlinech_finder(buffer);
+		if (index_of_nl > -1) // if \n found in buffer ( CAN this BE -i )
+		{
+			ft_strjoin(*rvalue, buffer, index_of_nl + 1);
+			ft_memmove(buffer, &buffer[index_of_nl], index_of_nl + 1);
+			my_bzero(&buffer[BUFFER_SIZE - index_of_nl - 1], BUFFER_SIZE - index_of_nl - 1);
+			return (1);
+		}
+		else //if \n not found
+		{
+			if (bytesread < BUFFER_SIZE)
+			{
+				if (NULL == ft_strjoin(*rvalue, buffer, bytesread))
+					return(*error = -1);
+				ft_memmove(buffer, &buffer[bytesread], bytesread + 1);
+				my_bzero(&buffer[BUFFER_SIZE - bytesread - 1], BUFFER_SIZE - bytesread - 1);
+			}
+			else
+				ft_strjoin(*rvalue, buffer, BUFFER_SIZE);
+		}
 	}
 	return (0);
-}
-
-void	freeall(void)
-{
-	printf("\nFREE ALL\n");
 }
 
 char	*get_next_line(int fd)
 {
 	static char	buffer[BUFFER_SIZE + 1];
 	char		*rvalue;
-	int			is_there_newline;
+	ssize_t		bytesread;
 	int			err;
 
 	rvalue = NULL;
-	err = 42;
-	is_there_newline = 0;
-	while (err != 0 && err != -1 && fd >= 0)
+	bytesread = BUFFER_SIZE; // ?
+	err = 0;
+	while (bytesread != 0 && bytesread != -1 ) // || (bytesread < BUFFER_SIZE && *buffer != 0)
 	{
-		is_there_newline = buffer_handler(buffer, &rvalue, &err);
-		if (err != -1 && is_there_newline == 1)
-			return (rvalue);
-		else if (err != -1)
-			err = read(fd, buffer, BUFFER_SIZE);
-		else
-			printf("\nWHAAT?!\n"); // break;
-	}
-	if (err == -1 || (err == 0 && !*rvalue) || fd < 0)
+		if (1 == buffer_handler(buffer, bytesread, &rvalue, &err)) // if buf_handler found a \n
 		{
-		printf("\n and rvalue at end:%s\n", rvalue); //REMOVE
-			return (NULL);
+			if (err == -1)
+				return (NULL);
+			return(rvalue);
 		}
+		// if (bytesread < BUFFER_SIZE)
+		// 	return (rvalue);
+		bytesread = read(fd, buffer, BUFFER_SIZE);
+	}
+	if (bytesread == 0 || bytesread == -1)
+		return (NULL);
+	//free() - have it return NULL
 	return (rvalue);
 }
