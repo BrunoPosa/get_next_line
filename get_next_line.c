@@ -64,12 +64,12 @@ void	*ft_memmove(void *dst, void *src, size_t len)
 	return (dst);
 }
 
-void	my_bzero(char *s, size_t n)
+void	my_bzero(char *s)
 {
-	size_t	i;
+	ssize_t	i;
 
 	i = 0;
-	while (i < n)
+	while (s[i] != 0)
 	{
 		s[i] = 0;
 		i++;
@@ -93,7 +93,9 @@ ssize_t	newlinech_finder(char *s)
 			return (i);
 		i++;
 	}
-	return (-1); // could returning -i be useful to see when bytesread is < BUFFER_SIZE? beware discerning betw -0 and 0
+	if (i == BUFFER_SIZE) // this step may allow further simplificaiton of buffer_handler()
+		return (i);
+	return (-1);
 }
 
 char	*ft_strjoin(char *rvalue1, char *buffer1, size_t buffer_len)
@@ -118,32 +120,42 @@ char	*ft_strjoin(char *rvalue1, char *buffer1, size_t buffer_len)
 		and shift its content by index_of_newline or if no \n, shift all until \0. bzero the rest until BUF_SIZE
 	- call check for \n char function
 	- if bytesread == 0 && *rvalue != \0 //if not at start of function and bytesread is 0
-	- returns flag 1 if found \n 	*/
-int	buffer_handler(char *buffer, ssize_t bytesread, char **rvalue, int *error)
+	- returns flag 1 if found \n 	
+	- Try refactoring rewriting using only one var, called OFFSET in place of buflen, index_of_nl
+		to pass to functions below and call them only once, instead of 3 times like now  */
+int	buffer_handler(char *buffer, char **rvalue, int *error)
 {
 	ssize_t	index_of_nl; // do i need to initialize?
+	size_t	buflen;
 
+	buflen = 0;
 	if (*buffer != 0) //correct syntax for array?
 	{
 		index_of_nl = newlinech_finder(buffer);
-		if (index_of_nl > -1) // if \n found in buffer ( CAN this BE -i )
+		if (index_of_nl > -1 && index_of_nl != BUFFER_SIZE) // if \n found in buffer or no \n but buffer is full
 		{
-			ft_strjoin(*rvalue, buffer, index_of_nl + 1);
-			ft_memmove(buffer, &buffer[index_of_nl], index_of_nl + 1);
-			my_bzero(&buffer[BUFFER_SIZE - index_of_nl - 1], BUFFER_SIZE - index_of_nl - 1);
+			*rvalue = ft_strjoin(*rvalue, buffer, index_of_nl + 1);
+			ft_memmove(buffer, &buffer[index_of_nl + 1], BUFFER_SIZE - index_of_nl);
+			my_bzero(&buffer[BUFFER_SIZE - index_of_nl]);
 			return (1);
 		}
 		else //if \n not found
 		{
-			if (bytesread < BUFFER_SIZE)
+			buflen = ft_strlen(buffer);
+			if (buflen < BUFFER_SIZE)
 			{
-				if (NULL == ft_strjoin(*rvalue, buffer, bytesread))
+				*rvalue = ft_strjoin(*rvalue, buffer, buflen);
+				if (NULL == *rvalue)
 					return(*error = -1);
-				ft_memmove(buffer, &buffer[bytesread], bytesread + 1);
-				my_bzero(&buffer[BUFFER_SIZE - bytesread - 1], BUFFER_SIZE - bytesread - 1);
+				ft_memmove(buffer, &buffer[buflen], buflen);
+				my_bzero(&buffer[buflen]);
+				return (1);
 			}
 			else
-				ft_strjoin(*rvalue, buffer, BUFFER_SIZE);
+			{
+				*rvalue = ft_strjoin(*rvalue, buffer, BUFFER_SIZE);
+				my_bzero(buffer);
+			}
 		}
 	}
 	return (0);
@@ -161,7 +173,7 @@ char	*get_next_line(int fd)
 	err = 0;
 	while (bytesread != 0 && bytesread != -1 ) // || (bytesread < BUFFER_SIZE && *buffer != 0)
 	{
-		if (1 == buffer_handler(buffer, bytesread, &rvalue, &err)) // if buf_handler found a \n
+		if (1 == buffer_handler(buffer, &rvalue, &err)) // if buf_handler found a \n
 		{
 			if (err == -1)
 				return (NULL);
