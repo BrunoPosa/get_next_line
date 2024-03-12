@@ -76,10 +76,11 @@ void	my_bzero(char *s)
 	}
 }
 
-/*  newlinech_finder
-	- check for \n char function
-	- return size_t index of the \n if found, OR 0 if not found
-*/
+/* ========================================================================
+	 	newlinech_finder - returns ssize_t index of found \n,
+		OR index which matches BUFSIZE if no \n but full buffer found,
+		OR -1 if no \n AND not full buffer found
+	======================================================================== */
 ssize_t	newlinech_finder(char *s)
 {
 	ssize_t	i;
@@ -116,13 +117,15 @@ char	*ft_strjoin(char *rvalue1, char *buffer1, size_t buffer_len)
 	return (joined);
 }
 
-/*	- buffer_handler should sort through up to (bytesread/until \0) of it and if needed, store it in rvalue
+/*	========================================================================
+	- buffer_handler should sort through up to (bytesread/until \0) of it and if needed, store it in rvalue
 		and shift its content by index_of_newline or if no \n, shift all until \0. bzero the rest until BUF_SIZE
 	- call check for \n char function
 	- if bytesread == 0 && *rvalue != \0 //if not at start of function and bytesread is 0
 	- returns flag 1 if found \n 	
 	- Try refactoring rewriting using only one var, called OFFSET in place of buflen, index_of_nl
-		to pass to functions below and call them only once, instead of 3 times like now  */
+		to pass to functions below and call them only once, instead of 3 times like now 
+	======================================================================== */
 int	buffer_handler(char *buffer, char **rvalue, int *error)
 {
 	ssize_t	index_of_nl; // do i need to initialize?
@@ -132,7 +135,8 @@ int	buffer_handler(char *buffer, char **rvalue, int *error)
 	if (*buffer != 0) //correct syntax for array?
 	{
 		index_of_nl = newlinech_finder(buffer);
-		if (index_of_nl > -1 && index_of_nl != BUFFER_SIZE) // if \n found in buffer or no \n but buffer is full
+		// if there is a \n in buffer OR the buffer is full even without a \n in it, add to rvalue until \n or buffer end
+		if (index_of_nl > -1 && index_of_nl != BUFFER_SIZE)
 		{
 			*rvalue = ft_strjoin(*rvalue, buffer, index_of_nl + 1);
 			ft_memmove(buffer, &buffer[index_of_nl + 1], BUFFER_SIZE - index_of_nl);
@@ -147,9 +151,9 @@ int	buffer_handler(char *buffer, char **rvalue, int *error)
 				*rvalue = ft_strjoin(*rvalue, buffer, buflen);
 				if (NULL == *rvalue)
 					return(*error = -1);
-				ft_memmove(buffer, &buffer[buflen], buflen);
-				my_bzero(&buffer[buflen]);
-				return (1);
+			// printf("\nrvalue:%s; buffer:%s;\n", *rvalue, buffer); // OOOO=OOOO STATUS OOOO=OOOO
+				ft_memmove(buffer, &buffer[buflen], BUFFER_SIZE - buflen);
+				my_bzero(&buffer[BUFFER_SIZE - buflen]);
 			}
 			else
 			{
@@ -179,11 +183,9 @@ char	*get_next_line(int fd)
 				return (NULL);
 			return(rvalue);
 		}
-		// if (bytesread < BUFFER_SIZE)
-		// 	return (rvalue);
 		bytesread = read(fd, buffer, BUFFER_SIZE);
 	}
-	if (bytesread == 0 || bytesread == -1)
+	if (rvalue == NULL && (bytesread == 0 || bytesread == -1))
 		return (NULL);
 	//free() - have it return NULL
 	return (rvalue);
