@@ -5,19 +5,20 @@
 #include <string.h>
 
 
-size_t	ft_strlen(const char *s)
+size_t	my_strlen(const char *s)
 {
 	size_t	i;
 
 	i = 0;
 	while (s[i] != '\0')
 		i++;
+	s = NULL; // ?
 	return (i);
 }
 
 void	*my_memcpy(void *dst, const void *src, size_t n)
 {
-	size_t			i;
+	size_t	i;
 	unsigned char	*d;
 	unsigned char	*s;
 
@@ -36,7 +37,7 @@ void	*my_memcpy(void *dst, const void *src, size_t n)
 	return (d);
 }
 
-void	*ft_memmove(void *dst, void *src, size_t len)
+void	*my_memmove(void *dst, void *src, size_t len)
 {
 	size_t	i;
 
@@ -64,7 +65,7 @@ void	*ft_memmove(void *dst, void *src, size_t len)
 	return (dst);
 }
 
-void	my_bzero(char *s)
+void	my_bzero(char *s) //revert to OG bzero with len?
 {
 	ssize_t	i;
 
@@ -76,117 +77,101 @@ void	my_bzero(char *s)
 	}
 }
 
-/* ========================================================================
-	 	newlinech_finder - returns ssize_t index of found \n,
-		OR index which matches BUFSIZE if no \n but full buffer found,
-		OR -1 if no \n AND not full buffer found
-	======================================================================== */
-ssize_t	newlinech_finder(char *s)
+/* 	==========================================================================
+	 	shift_count_setter - returns ssize_t index of whichever comes first,
+		\n (puts newline flag up) or \0. Used for shifting the buffer by index.
+	========================================================================== */
+ssize_t	shift_count_setter(char *buffer, int *newline)
 {
 	ssize_t	i;
 
 	i = 0;
-	if (!s)
-		return (-1);
-	while (s && s[i] != '\0')
+	*newline = 0;
+	while (buffer[i] != '\0')
 	{
-		if (s[i] == '\n')
+		if (buffer[i] == '\n')
+		{
+			*newline = 1;
 			return (i);
+		}
 		i++;
 	}
-	if (i == BUFFER_SIZE) // this step may allow further simplificaiton of buffer_handler()
-		return (i);
-	return (-1);
+	return (i);
 }
 
-char	*ft_strjoin(char *rvalue1, char *buffer1, size_t buffer_len)
+char	*my_strjoin(char *rvalue1, char *buffer1, size_t buffer_len)
 {
 	char	*joined;
 	size_t	rvalue1_len;
 
 	if (rvalue1)
-		rvalue1_len = ft_strlen(rvalue1);
+		rvalue1_len = my_strlen(rvalue1);
 	else
 		rvalue1_len = 0;
 	joined = malloc(sizeof(char) * (rvalue1_len + buffer_len + 1));
 	if (!joined)
+	{
+		if (*rvalue1 != 0)
+			free(rvalue1);
 		return (NULL);
+	}
+	joined[rvalue1_len + buffer_len] = 0;
+	my_bzero(joined);
 	my_memcpy(joined, rvalue1, rvalue1_len + 1);// +1 or not?
 	my_memcpy(joined + rvalue1_len, buffer1, buffer_len + 1);
-	// free((char*)s1); //do i need to cast?
+	if (rvalue1)
+		free(rvalue1); //do i need to cast?
 	return (joined);
 }
 
 /*	========================================================================
-	- buffer_handler should sort through up to (bytesread/until \0) of it and if needed, store it in rvalue
-		and shift its content by index_of_newline or if no \n, shift all until \0. bzero the rest until BUF_SIZE
-	- call check for \n char function
-	- if bytesread == 0 && *rvalue != \0 //if not at start of function and bytesread is 0
-	- returns flag 1 if found \n 	
-	- Try refactoring rewriting using only one var, called OFFSET in place of buflen, index_of_nl
-		to pass to functions below and call them only once, instead of 3 times like now 
+		buffer_handler stores part of buffer until \n or \0 into rvalue,
+		shifts its content by shift_count, and bzero-es the rest of buffer.
+		It returns 1 if found \n or 0 if not, and -1 on error
 	======================================================================== */
 int	buffer_handler(char *buffer, char **rvalue, int *error)
 {
-	ssize_t	index_of_nl; // do i need to initialize?
-	size_t	buflen;
+	ssize_t	shift_count;
+	int		newline;
 
-	buflen = 0;
-	if (*buffer != 0) //correct syntax for array?
-	{
-		index_of_nl = newlinech_finder(buffer);
-		// if there is a \n in buffer OR the buffer is full even without a \n in it, add to rvalue until \n or buffer end
-		if (index_of_nl > -1 && index_of_nl != BUFFER_SIZE)
-		{
-			*rvalue = ft_strjoin(*rvalue, buffer, index_of_nl + 1);
-			ft_memmove(buffer, &buffer[index_of_nl + 1], BUFFER_SIZE - index_of_nl);
-			my_bzero(&buffer[BUFFER_SIZE - index_of_nl]);
-			return (1);
-		}
-		else //if \n not found
-		{
-			buflen = ft_strlen(buffer);
-			if (buflen < BUFFER_SIZE)
-			{
-				*rvalue = ft_strjoin(*rvalue, buffer, buflen);
-				if (NULL == *rvalue)
-					return(*error = -1);
-			// printf("\nrvalue:%s; buffer:%s;\n", *rvalue, buffer); // OOOO=OOOO STATUS OOOO=OOOO
-				ft_memmove(buffer, &buffer[buflen], BUFFER_SIZE - buflen);
-				my_bzero(&buffer[BUFFER_SIZE - buflen]);
-			}
-			else
-			{
-				*rvalue = ft_strjoin(*rvalue, buffer, BUFFER_SIZE);
-				my_bzero(buffer);
-			}
-		}
-	}
-	return (0);
+	newline = 0;
+	if (*buffer == 0)
+		return (0); // make sure this is not confused as 'no newline found'
+	shift_count = shift_count_setter(buffer, &newline);
+	*rvalue = my_strjoin(*rvalue, buffer, shift_count + newline);
+	if (*rvalue == NULL)
+		return (*error = -1);
+	my_memmove(buffer, &buffer[shift_count + newline], BUFFER_SIZE - shift_count);
+	my_bzero(&buffer[BUFFER_SIZE - shift_count]);// get len param back here?
+	return (newline);
 }
+
+/*	========================================================================
+		get_next_line returns rvalue if found \n, or at the end of file
+		without errors.	On error, it returns NULL.
+	======================================================================== */
 
 char	*get_next_line(int fd)
 {
 	static char	buffer[BUFFER_SIZE + 1];
 	char		*rvalue;
-	ssize_t		bytesread;
 	int			err;
 
 	rvalue = NULL;
-	bytesread = BUFFER_SIZE; // ?
-	err = 0;
-	while (bytesread != 0 && bytesread != -1 ) // || (bytesread < BUFFER_SIZE && *buffer != 0)
+	err = 42;
+	while (err != 0 && err != -1)
 	{
-		if (1 == buffer_handler(buffer, &rvalue, &err)) // if buf_handler found a \n
+		if (buffer_handler(buffer, &rvalue, &err) == 1)
+			return (rvalue);
+		if (err == -1)
 		{
-			if (err == -1)
-				return (NULL);
-			return(rvalue);
+			if (*rvalue != 0)
+				free(rvalue);
+			return (NULL);
 		}
-		bytesread = read(fd, buffer, BUFFER_SIZE);
+		err = read(fd, buffer, BUFFER_SIZE);
 	}
-	if (rvalue == NULL && (bytesread == 0 || bytesread == -1))
-		return (NULL);
-	//free() - have it return NULL
+	if (rvalue == NULL && (err == 0 || err == -1))
+		return (NULL);//nothing to free i think
 	return (rvalue);
 }
