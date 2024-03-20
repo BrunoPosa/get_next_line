@@ -6,7 +6,7 @@
 /*   By: bposa <bposa@student.hive.fi>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/26 19:26:54 by bposa             #+#    #+#             */
-/*   Updated: 2024/03/14 15:41:14 by bposa            ###   ########.fr       */
+/*   Updated: 2024/03/20 16:14:46 by bposa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,6 @@
 # endif
 
 # include <unistd.h>
-# include <stddef.h>
 # include <stdlib.h>
 
 char	*get_next_line(int fd);

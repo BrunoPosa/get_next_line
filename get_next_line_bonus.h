@@ -6,7 +6,7 @@
 /*   By: bposa <bposa@student.hive.fi>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/26 19:26:54 by bposa             #+#    #+#             */
-/*   Updated: 2024/03/14 16:54:32 by bposa            ###   ########.fr       */
+/*   Updated: 2024/03/20 16:12:47 by bposa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,7 @@
 # endif
 
 # include <unistd.h>
-# include <stddef.h>
 # include <stdlib.h>
-# include <limits.h>
 
 char	*get_next_line(int fd);
 size_t	my_strlen(const char *s);

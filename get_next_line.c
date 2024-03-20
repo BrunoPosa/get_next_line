@@ -6,7 +6,7 @@
 /*   By: bposa <bposa@student.hive.fi>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/03/14 14:34:03 by bposa             #+#    #+#             */
-/*   Updated: 2024/03/14 15:57:26 by bposa            ###   ########.fr       */
+/*   Updated: 2024/03/20 16:27:33 by bposa            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,11 +68,6 @@ char	*my_strjoin(char *rvalue1, char *buffer1, size_t buffer_len)
 	return (joined);
 }
 
-/* 	======================================================================
-	shift_count_setter - returns ssize_t index of whichever comes first,
-	\n (puts newline flag up) or \0. Used for shifting the buffer by index.
-	====================================================================== */
-
 ssize_t	shift_count_setter(char *buffer, int *newline)
 {
 	ssize_t	i;
@@ -91,12 +86,6 @@ ssize_t	shift_count_setter(char *buffer, int *newline)
 	return (i);
 }
 
-/*	======================================================================
-		buffer_handler stores part of buffer until \n or \0 into rvalue,
-		shifts its content by shift_count, and bzero-es the rest of buffer.
-		It returns 1 if found \n or 0 if not, and -1 on error
-	====================================================================== */
-
 int	buffer_handler(char *buffer, char **rvalue, int *error)
 {
 	ssize_t	shift_count;
@@ -113,11 +102,6 @@ int	buffer_handler(char *buffer, char **rvalue, int *error)
 	my_bzero(&buffer[BUFFER_SIZE - shift_count]);
 	return (newline);
 }
-
-/*	======================================================================
-		get_next_line returns rvalue if found \n or if at the end of file
-		without errors.	On error, it returns NULL.
-	====================================================================== */
 
 char	*get_next_line(int fd)
 {
